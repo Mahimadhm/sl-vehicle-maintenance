@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SL Vehicle Maintenance System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 font-sans antialiased min-h-screen flex flex-col">
+    
+    <nav class="bg-blue-600 text-white shadow-md p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="font-bold text-xl tracking-wide flex items-center gap-2">
+                🚗 <span id="nav-title">Vehicle Maintenance System</span>
+            </div>
+            <div class="flex items-center space-x-6 font-medium">
+                <a href="/" class="hover:text-blue-200 transition">Home</a>
+                <a href="/dashboard" class="hover:text-blue-200 transition">Dashboard</a>
+                {% if current_user.is_authenticated %}
+                    <a href="/logout" class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm transition">Logout</a>
+                {% else %}
+                    <a href="/login" class="hover:text-blue-200 transition">Login</a>
+                    <a href="/register" class="hover:text-blue-200 transition">Register</a>
+                {% endif %}
+                
+                <button id="lang-toggle" onclick="toggleLanguage()" class="bg-blue-800 hover:bg-blue-900 text-xs uppercase px-3 py-1.5 rounded-full border border-blue-400 tracking-wider transition">
+                    සිංහල
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto mt-8 px-4 flex-grow mb-12">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded shadow-sm" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script>
+        const translations = {
+            en: {
+                navTitle: "Vehicle Maintenance System",
+                heroTitle: "Sri Lankan Vehicle Maintenance System",
+                heroSub: "Track vehicle services, fuel efficiency, and maintenance logs seamlessly.",
+                totalVehicles: "Registered Vehicles",
+                totalLogs: "Maintenance Logs",
+                totalCost: "Total Expenses",
+                addVehicle: "Add Sri Lankan Vehicle",
+                vehicleNo: "Vehicle Number (e.g., WP CAB-1234)",
+                brand: "Brand",
+                model: "Model",
+                fuelType: "Fuel Variant",
+                addBtn: "Register Vehicle",
+                addLog: "Log New Maintenance Task",
+                selectVehicle: "Select Vehicle",
+                serviceDate: "Service Date",
+                mileage: "Current Mileage (km)",
+                taskDesc: "Task Description / Repair Details",
+                cost: "Cost (LKR - Rs.)",
+                saveLog: "Save Maintenance Log",
+                costChartTitle: "Monthly Maintenance Expenses (LKR)",
+                fuelChartTitle: "Expenses Breakdown by Fuel Type"
+            },
+            si: {
+                navTitle: "වාහන නඩත්තු පද්ධතිය",
+                heroTitle: "ශ්‍රී ලංකා වාහන නඩත්තු සහ සේවා පද්ධතිය",
+                heroSub: "වාහන සේවා, ඉන්ධන පිරිවැය සහ නඩත්තු වාර්තා පහසුවෙන් සුරැකීමට.",
+                totalVehicles: "ලියාපදිංචි වාහන ප්‍රමාණය",
+                totalLogs: "නඩත්තු වාර්තා එකතුව",
+                totalCost: "මුළු වියදම (රුපියල්)",
+                addVehicle: "අලුත් වාහනයක් ඇතුළත් කරන්න",
+                vehicleNo: "වාහන අංකය (උදා: WP CAB-1234)",
+                brand: "නිෂ්පාදිත සමාගම (Brand)",
+                model: "මාදිලිය (Model)",
+                fuelType: "ඉන්ධන වර්ගය",
+                addBtn: "වාහනය ඇතුළත් කරන්න",
+                addLog: "නව නඩත්තු වාර්තාවක් එක් කරන්න",
+                selectVehicle: "වාහනය තෝරන්න",
+                serviceDate: "සේවා දිනය",
+                mileage: "වත්මන් ධාවන දුර (කි.මී.)",
+                taskDesc: "නඩත්තු විස්තරය / අලුත්වැඩියාව",
+                cost: "වියදම (LKR - රු.)",
+                saveLog: "වාර්තාව සුරකින්න",
+                costChartTitle: "මාසික නඩත්තු වියදම් විශ්ලේෂණය (රු.)",
+                fuelChartTitle: "ඉන්ධන වර්ගය අනුව වියදම් බෙදී යාම"
+            }
+        };
+
+        function updateUI(lang) {
+            document.cookie = "lang=" + lang + "; path=/";
+            document.getElementById('lang-toggle').innerText = lang === 'en' ? 'සිංහල' : 'English';
+            
+            // Dynamic text loading helper
+            const safeSetText = (id, textKey) => {
+                const el = document.getElementById(id);
+                if (el && translations[lang][textKey]) el.innerText = translations[lang][textKey];
+            };
+            const safeSetPlaceholder = (name, textKey) => {
+                const inputs = document.getElementsByName(name);
+                inputs.forEach(input => {
+                    if (translations[lang][textKey]) input.placeholder = translations[lang][textKey];
+                });
+            };
+
+            safeSetText('nav-title', 'navTitle');
+            safeSetText('hero-title', 'navTitle');
+            safeSetText('hero-sub', 'heroSub');
+            safeSetText('lbl-vehicles', 'totalVehicles');
+            safeSetText('lbl-logs', 'totalLogs');
+            safeSetText('lbl-cost', 'totalCost');
+            safeSetText('lbl-add-vehicle', 'addVehicle');
+            safeSetText('lbl-add-log', 'addLog');
+            safeSetText('btn-add-vehicle', 'addBtn');
+            safeSetText('btn-add-log', 'saveLog');
+            
+            safeSetPlaceholder('vehicle_no', 'vehicleNo');
+            safeSetPlaceholder('brand', 'brand');
+            safeSetPlaceholder('model', 'model');
+            safeSetPlaceholder('current_mileage', 'mileage');
+            safeSetPlaceholder('task_description', 'taskDesc');
+            safeSetPlaceholder('cost_lkr', 'cost');
+        }
+
+        function toggleLanguage() {
+            let currentLang = document.cookie.split('; ').find(row => row.startsWith('lang='))?.split('=')[1] || 'en';
+            let newLang = currentLang === 'en' ? 'si' : 'en';
+            updateUI(newLang);
+            location.reload(); // Reload to let backend context pick up the switch if required
+        }
+
+        // Init language state on load
+        document.addEventListener("DOMContentLoaded", () => {
+            let currentLang = document.cookie.split('; ').find(row => row.startsWith('lang='))?.split('=')[1] || 'en';
+            updateUI(currentLang);
+        });
+    </script>
+</body>
+</html>

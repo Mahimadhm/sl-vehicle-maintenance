@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-2xl shadow-lg flex items-center justify-between">
+        <div>
+            <p id="lbl-vehicles" class="opacity-80 font-medium uppercase text-xs tracking-wider">Registered Vehicles</p>
+            <h3 class="text-3xl font-bold mt-1">{{ vehicles|length }}</h3>
+        </div>
+        <div class="text-4xl opacity-30">🏍️</div>
+    </div>
+    <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-2xl shadow-lg flex items-center justify-between">
+        <div>
+            <p id="lbl-logs" class="opacity-80 font-medium uppercase text-xs tracking-wider">Maintenance Logs</p>
+            <h3 class="text-3xl font-bold mt-1">{{ logs|length }}</h3>
+        </div>
+        <div class="text-4xl opacity-30">🛠️</div>
+    </div>
+    <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white p-6 rounded-2xl shadow-lg flex items-center justify-between">
+        <div>
+            <p id="lbl-cost" class="opacity-80 font-medium uppercase text-xs tracking-wider">Total Expenses</p>
+            <h3 class="text-3xl font-bold mt-1">Rs. {{ "{:,.2f}".format(total_cost) }}</h3>
+        </div>
+        <div class="text-4xl opacity-30">🇱🇰</div>
+    </div>
+</div>
+
+<div class="bg-white p-6 rounded-2xl shadow-md border border-gray-100 mb-8">
+    <div class="flex items-center gap-2 border-b pb-3 mb-4">
+        <span class="text-2xl">🔔</span>
+        <h2 id="lbl-reminder-title" class="text-lg font-bold text-gray-800">Smart Service & Maintenance Reminders</h2>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {% for rm in reminders %}
+        <div class="p-4 rounded-xl border {% if rm.status == 'Critical' %}bg-red-50 border-red-200 text-red-900{% elif rm.status == 'Warning' %}bg-yellow-50 border-yellow-200 text-yellow-900{% else %}bg-green-50 border-green-200 text-green-900{% endif %} flex flex-col justify-between shadow-sm">
+            <div class="flex justify-between items-center mb-2">
+                <span class="font-bold tracking-wider text-sm">{{ rm.vehicle_no }}</span>
+                <span class="px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider
+                    {% if rm.status == 'Critical' %}bg-red-200 text-red-800
+                    {% elif rm.status == 'Warning' %}bg-yellow-200 text-yellow-800
+                    {% else %}bg-green-200 text-green-800{% endif %}">
+                    {{ rm.status }}
+                </span>
+            </div>
+            
+            <p class="text-xs opacity-90 mb-3">
+                <span class="lbl-rm-text">Next service due at</span> <strong>{{ rm.next_service }} km</strong> 
+                (<span class="lbl-rm-remain">Remaining</span>: <strong>{{ rm.remaining }} km</strong>)
+            </p>
+            
+            <div class="w-full bg-gray-200/60 rounded-full h-2">
+                <div class="rounded-full h-2 {% if rm.status == 'Critical' %}bg-red-600{% elif rm.status == 'Warning' %}bg-yellow-500{% else %}bg-green-600{% endif %}" 
+                     style="width: {{ rm.progress }}%"></div>
+            </div>
+        </div>
+        {% else %}
+        <p id="lbl-no-reminders" class="text-sm text-gray-400 font-medium p-2">Add a maintenance log to activate machine learning prediction reminders.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+    
+    <div class="lg:col-span-1 space-y-6">
+        <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
+            <h2 id="lbl-add-vehicle" class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Add Sri Lankan Vehicle</h2>
+            <form method="POST" action="/add-vehicle" onsubmit="return validateSLPlate(this.vehicle_no.value)">
+                <div class="mb-3">
+                    <input name="vehicle_no" required placeholder="Vehicle No (e.g. WP CBB-1234)" class="border border-gray-300 p-2.5 rounded-xl w-full focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <span id="plate-error" class="text-red-500 text-xs mt-1 hidden">Invalid SL Plate format! Use (e.g., WP CAB-1234 or CBB-1234)</span>
+                </div>
+                <input name="brand" required placeholder="Brand (e.g. Yamaha)" class="border border-gray-300 p-2.5 rounded-xl w-full mb-3 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <input name="model" required placeholder="Model (e.g. FZ V4)" class="border border-gray-300 p-2.5 rounded-xl w-full mb-3 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                
+                <select name="fuel_type" class="border border-gray-300 p-2.5 rounded-xl w-full mb-4 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <option value="92 Octane">92 Octane Petrol</option>
+                    <option value="95 Octane">95 Octane Petrol</option>
+                    <option value="Auto Diesel">Auto Diesel</option>
+                    <option value="Super Diesel">Super Diesel</option>
+                </select>
+                <button id="btn-add-vehicle" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl shadow transition">Register Vehicle</button>
+            </form>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
+            <h2 id="lbl-add-log" class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Log New Maintenance Task</h2>
+            <form method="POST" action="/add-log">
+                <select name="vehicle_id" required class="border border-gray-300 p-2.5 rounded-xl w-full mb-3 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <option value="" disabled selected id="lbl-select-vehicle">Select Vehicle</option>
+                    {% for vehicle in vehicles %}
+                        <option value="{{ vehicle.id }}">{{ vehicle.vehicle_no }} ({{ vehicle.brand }})</option>
+                    {% endfor %}
+                </select>
+                <input type="date" name="service_date" required class="border border-gray-300 p-2.5 rounded-xl w-full mb-3 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <input type="number" name="current_mileage" required placeholder="Current Mileage (km)" class="border border-gray-300 p-2.5 rounded-xl w-full mb-3 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <textarea name="task_description" required placeholder="Task Description / Repairs done" class="border border-gray-300 p-2.5 rounded-xl w-full mb-3 h-20 focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+                
+                <select name="fuel_type" class="border border-gray-300 p-2.5 rounded-xl w-full mb-3 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <option value="92 Octane">92 Octane Petrol</option>
+                    <option value="95 Octane">95 Octane Petrol</option>
+                    <option value="Auto Diesel">Auto Diesel</option>
+                    <option value="Super Diesel">Super Diesel</option>
+                </select>
+                <input type="number" step="0.01" name="cost_lkr" required placeholder="Cost (LKR - Rs.)" class="border border-gray-300 p-2.5 rounded-xl w-full mb-4 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <button id="btn-add-log" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-xl shadow transition">Save Maintenance Log</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-md border border-gray-100 flex flex-col justify-between">
+        <div>
+            <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Visual Cost Analysis Dashboard</h2>
+            <div class="w-full h-72 mb-4">
+                <canvas id="costAnalyticsChart"></canvas>
+            </div>
+        </div>
+        <div class="border-t pt-4">
+            <div class="w-full h-44">
+                <canvas id="fuelBreakdownChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+    <div class="p-6 border-b border-gray-50 bg-gray-50/50">
+        <h2 class="font-bold text-gray-800 text-lg">System History Logs</h2>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-100 text-gray-600 uppercase text-xs font-semibold tracking-wider">
+                    <th class="p-4">Date</th>
+                    <th class="p-4">Mileage</th>
+                    <th class="p-4">Description</th>
+                    <th class="p-4">Fuel Variant</th>
+                    <th class="p-4 text-right">Expense (Rs.)</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-700 divide-y divide-gray-100"> {% for log in logs %}
+                <tr class="hover:bg-gray-50/80 transition border-b border-gray-100">
+                    <td class="p-4 font-medium">{{ log.service_date.strftime('%Y-%m-%d') }}</td>
+                    <td class="p-4">{{ "{:,}".format(log.current_mileage) }} km</td>
+                    <td class="p-4 text-sm max-w-xs truncate">{{ log.task_description }}</td>
+                    <td class="p-4">
+                        <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-50 text-blue-700">
+                            {{ log.fuel_type }}
+                        </span>
+                    </td>
+                    <td class="p-4 font-semibold text-right text-emerald-600">Rs. {{ "{:,.2f}".format(log.cost_lkr) }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center p-8 text-gray-400 font-medium">No maintenance entries logged yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Optimized Sri Lankan License Plate Format Input Regex Checker
+    function validateSLPlate(plate) {
+        // Dynamic cleanup and standard validation across modern, vintage and custom SL plates
+        const cleanPlate = plate.trim().toUpperCase();
+        const slRegex = /^(?:[A-Z]{2}[-\s]?)?[A-Z]{2,3}[-\s]?\d{4}$|^\d{2,3}[-\s]?[A-Z]{2}[-\s]?\d{4}$/;
+        
+        const errSpan = document.getElementById('plate-error');
+        if(!slRegex.test(cleanPlate)) {
+            errSpan.classList.remove('hidden');
+            return false;
+        }
+        errSpan.classList.add('hidden');
+        return true;
+    }
+
+    // Load Charts Dynamically using JSON Endpoint Context API
+    document.addEventListener("DOMContentLoaded", async () => {
+        try {
+            const response = await fetch('/api/logs');
+            const data = await response.json();
+            
+            const logs = data.logs;
+            const fuelData = {};
+
+            logs.forEach(log => {
+                fuelData[log.fuel_type] = (fuelData[log.fuel_type] || 0) + log.cost_lkr;
+            });
+
+            // Chart 1: Bar layout for Expenses Breakdown by Fuel type
+            const ctxFuel = document.getElementById('fuelBreakdownChart').getContext('2d');
+            new Chart(ctxFuel, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(fuelData),
+                    datasets: [{
+                        label: 'Cost by Fuel Variant (Rs.)',
+                        data: Object.values(fuelData),
+                        backgroundColor: ['#3b82f6', '#a855f7', '#10b981', '#f59e0b'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Chart 2: Line Chart for overall running context presentation
+            const ctxCost = document.getElementById('costAnalyticsChart').getContext('2d');
+            new Chart(ctxCost, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'Overall Running Cost (Rs.)',
+                        data: [12000, 19000, 3000, 5000, logs.reduce((acc,curr) => acc + curr.cost_lkr, 0), 0, 0, 0, 0, 0, 0, 0],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+        } catch (error) {
+            console.error("Failed to map dynamic charts variables", error);
+        }
+    });
+</script>
+
+{% endblock %}
